@@ -3,9 +3,16 @@
 __author__ = 'Шеряков Д.И.'
 
 import tkinter as tk
+from tkinter import ttk
 
-from enums import Difficulty
-from dataclasses_ import CellView
+from .enums import Difficulty
+from .dataclasses_ import CellView
+
+DIFFICULTY_MAPPING: dict[str, tuple[int, int, int]] = {
+    Difficulty.EASY: (8, 8, 10),
+    Difficulty.NORMAL: (16, 16, 40),
+    Difficulty.HARD: (16, 30, 99),
+}
 
 
 class MinesweeperView(tk.Tk):
@@ -16,8 +23,6 @@ class MinesweeperView(tk.Tk):
         super().__init__()
         self.option_add("*tearOff", False)
 
-        self.board_view: list[list[CellView]] | None = None
-
         self.main_menu: tk.Menu = tk.Menu(self)
 
         self.file_menu: tk.Menu = self._create_file_menu()
@@ -27,7 +32,28 @@ class MinesweeperView(tk.Tk):
 
         self.help_menu: tk.Menu = self._create_help_menu()
 
+        self._board_frame: ttk.Frame = ttk.Frame(borderwidth=1, relief='solid', padding=(8, 10))
+        self.board_view: list[list[CellView]] = self._create_board()
+
         self._setting_up_gui()
+
+    def __call__(self):
+        """Запуск графического интерфейса"""
+        try:
+            self.mainloop()
+        except KeyboardInterrupt:
+            pass
+
+    def _create_board(self) -> list[list[CellView]]:
+        """Создание игровой доски"""
+        rows, cols, mines = DIFFICULTY_MAPPING[self.difficulty_radio.get()]
+
+        board_view: list[list[CellView]] = [[CellView(self._board_frame, row, col) for col in range(cols)
+                                             ] for row in range(rows)]
+
+        self._board_frame.pack(anchor='center', padx=10, pady=10)
+
+        return board_view
 
     def _setting_up_gui(self) -> None:
         """Настройка GUI"""
@@ -38,7 +64,7 @@ class MinesweeperView(tk.Tk):
         self.main_menu.add_cascade(label='Сложность', menu=self.difficulty_menu)
         self.main_menu.add_cascade(label='Справка', menu=self.help_menu)
 
-        self._place_window_center()
+        self.resizable(False, False)
 
     def _create_file_menu(self) -> tk.Menu:
         """Создание меню Файл"""
@@ -81,22 +107,17 @@ class MinesweeperView(tk.Tk):
 
         self.geometry(f'{width}x{height}+{(screen_width - width) // 2}+{(screen_height - height) // 2}')
 
-    @staticmethod
-    def _create_difficulty_radio_var() -> tk.StringVar:
+    def _create_difficulty_radio_var(self) -> tk.StringVar:
         """Создание радио переменной для меню Сложность"""
         diff_radio: tk.StringVar = tk.StringVar()
         diff_radio.set(Difficulty.EASY)
+        diff_radio.trace_add('write', self.relating_board)
 
         return diff_radio
 
-    def __call__(self):
-        """Запуск графического интерфейса"""
-        try:
-            self.mainloop()
-        except KeyboardInterrupt:
-            pass
+    def relating_board(self, *_args) -> None:
+        """Пересоздаем игровую доску при смене сложности"""
+        for widget in self._board_frame.winfo_children():
+            widget.destroy()
 
-
-if __name__ == '__main__':
-    gui = MinesweeperView()
-    gui()
+        self.board_view: list[list[CellView]] = self._create_board()

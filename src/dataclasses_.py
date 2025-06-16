@@ -2,7 +2,6 @@
 
 __author__ = 'Шеряков Д.И.'
 
-import tkinter as tk
 from tkinter import ttk
 
 from dataclasses import dataclass, InitVar
@@ -11,15 +10,13 @@ from dataclasses import dataclass, InitVar
 @dataclass
 class CellView(ttk.Button):
     """Rласс-представление одной клетки поля"""
-    master: InitVar[tk.Tk]
+    master: InitVar[ttk.Frame]
     row: int
     col: int
 
     def __post_init__(self, master):
         super().__init__(master=master, text=' ', width=2)
         self.grid(row=self.row, column=self.col)
-        self.bind("<ButtonPress-1>")
-        self.bind("<ButtonPress-3>")
 
 
 @dataclass
